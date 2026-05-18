@@ -1,6 +1,6 @@
 /* Kaart Gemeente Apeldoorn — Dorpen & Wijken
  * Degen & Leideritz — hetgroteverhaalvanapeldoorn.nl
- * v7 — tooltip alleen op kaart
+ * v5
  */
 (function() {
 
@@ -34,7 +34,6 @@
     var mount = document.getElementById('kaartMount');
     if (!mount) return;
 
-    // CSS
     var style = document.createElement('style');
     style.textContent =
       '.kaart-wrap { position:relative; width:100%; }' +
@@ -45,29 +44,14 @@
       '#kaartTooltip { position:fixed; background:#1c1a16; color:#fff; font-size:13px; padding:5px 10px; pointer-events:none; white-space:nowrap; opacity:0; transition:opacity .12s; z-index:9999; border-radius:2px; }';
     document.head.appendChild(style);
 
-    // Tooltip
     var tooltip = document.createElement('div');
     tooltip.id = 'kaartTooltip';
     document.body.appendChild(tooltip);
 
-    function showTooltip(naam, e) {
-      tooltip.textContent = naam;
-      tooltip.style.opacity = '1';
-      if (e) {
-        tooltip.style.left = (e.clientX + 14) + 'px';
-        tooltip.style.top  = (e.clientY - 36) + 'px';
-      }
-    }
-    function hideTooltip() {
-      tooltip.style.opacity = '0';
-    }
-
-    // Container
     var wrap = document.createElement('div');
     wrap.className = 'kaart-wrap';
     mount.appendChild(wrap);
 
-    // SVG laden
     var xhr = new XMLHttpRequest();
     xhr.open('GET', SVG_URL, true);
     xhr.onload = function() {
@@ -80,18 +64,17 @@
       svgEl.setAttribute('viewBox', VIEWBOX);
       svgEl.removeAttribute('width');
       svgEl.removeAttribute('height');
-
       wrap.appendChild(svgEl);
 
       var groups = svgEl.querySelectorAll('#dorpen_en_wijken_kleuren > g');
       groups.forEach(function(g) { g.classList.add('wijk-path'); });
 
-      bindEvents(groups, showTooltip, hideTooltip);
+      bindEvents(groups, tooltip);
     };
     xhr.send();
   }
 
-  function bindEvents(groups, showTooltip, hideTooltip) {
+  function bindEvents(groups, tooltip) {
 
     function clearActive() {
       groups.forEach(function(g) { g.classList.remove('actief'); });
@@ -100,14 +83,21 @@
       });
     }
 
-    // Kaart hover & klik
     groups.forEach(function(g) {
       var slug = g.id;
       var naam = NAMES[slug] || slug;
 
-      g.addEventListener('mouseenter', function(e) { showTooltip(naam, e); });
-      g.addEventListener('mousemove',  function(e) { showTooltip(naam, e); });
-      g.addEventListener('mouseleave', function()  { hideTooltip(); });
+      g.addEventListener('mouseenter', function(e) {
+        tooltip.textContent = naam;
+        tooltip.style.opacity = '1';
+      });
+      g.addEventListener('mousemove', function(e) {
+        tooltip.style.left = (e.clientX + 14) + 'px';
+        tooltip.style.top  = (e.clientY - 36) + 'px';
+      });
+      g.addEventListener('mouseleave', function() {
+        tooltip.style.opacity = '0';
+      });
       g.addEventListener('click', function(e) {
         e.preventDefault();
         clearActive();
@@ -121,14 +111,11 @@
       });
     });
 
-    // Lijst hover → kaart + tooltip
     document.addEventListener('mouseenter', function(e) {
       var item = e.target.closest('[data-slug]');
       if (!item) return;
-      var slug = item.dataset.slug;
-      var naam = NAMES[slug] || slug;
       groups.forEach(function(g) {
-        g.classList.toggle('actief', g.id === slug);
+        g.classList.toggle('actief', g.id === item.dataset.slug);
       });
     }, true);
 
