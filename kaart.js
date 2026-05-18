@@ -1,6 +1,6 @@
 /* Kaart Gemeente Apeldoorn — Dorpen & Wijken
  * Degen & Leideritz — hetgroteverhaalvanapeldoorn.nl
- * v6 — tooltip ook bij lijst hover
+ * v7 — tooltip alleen op kaart
  */
 (function() {
 
@@ -130,21 +130,11 @@
       groups.forEach(function(g) {
         g.classList.toggle('actief', g.id === slug);
       });
-      showTooltip(naam, e);
-    }, true);
-
-    document.addEventListener('mousemove', function(e) {
-      var item = e.target.closest('[data-slug]');
-      if (!item) return;
-      var slug = item.dataset.slug;
-      var naam = NAMES[slug] || slug;
-      showTooltip(naam, e);
     }, true);
 
     document.addEventListener('mouseleave', function(e) {
       var item = e.target.closest('[data-slug]');
       if (!item) return;
-      hideTooltip();
       var a = document.querySelector('[data-slug].wijk-actief');
       groups.forEach(function(g) {
         g.classList.toggle('actief', a && g.id === a.dataset.slug);
