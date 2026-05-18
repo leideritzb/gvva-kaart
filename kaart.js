@@ -1,11 +1,11 @@
 /* Kaart Gemeente Apeldoorn — Dorpen & Wijken
  * Degen & Leideritz — hetgroteverhaalvanapeldoorn.nl
- * v5 — bijgesneden viewBox + brightness hover
+ * v6 — tooltip ook bij lijst hover
  */
 (function() {
 
   var SVG_URL = 'https://cdn.prod.website-files.com/60edd8e8a792c4b08f5abdb2/6a0b00dbd4d353835654b3ce_kaart-gemeente-apeldoorn.svg';
-  var VIEWBOX = '3001 1696 7496 7600'; // bijgesneden — geen witruimte
+  var VIEWBOX = '3001 1696 7496 7600';
 
   var NAMES = {
     'beekbergen':                    'Beekbergen, Lieren & Oosterhuizen',
@@ -50,41 +50,48 @@
     tooltip.id = 'kaartTooltip';
     document.body.appendChild(tooltip);
 
+    function showTooltip(naam, e) {
+      tooltip.textContent = naam;
+      tooltip.style.opacity = '1';
+      if (e) {
+        tooltip.style.left = (e.clientX + 14) + 'px';
+        tooltip.style.top  = (e.clientY - 36) + 'px';
+      }
+    }
+    function hideTooltip() {
+      tooltip.style.opacity = '0';
+    }
+
     // Container
     var wrap = document.createElement('div');
     wrap.className = 'kaart-wrap';
     mount.appendChild(wrap);
 
-    // SVG laden via XHR
+    // SVG laden
     var xhr = new XMLHttpRequest();
     xhr.open('GET', SVG_URL, true);
     xhr.onload = function() {
       if (xhr.status !== 200) return;
-
       var parser = new DOMParser();
       var doc = parser.parseFromString(xhr.responseText, 'image/svg+xml');
       var svgEl = doc.querySelector('svg');
       if (!svgEl) return;
 
-      // Bijsnijden: verwijder witruimte rondom de kaart
       svgEl.setAttribute('viewBox', VIEWBOX);
       svgEl.removeAttribute('width');
       svgEl.removeAttribute('height');
 
       wrap.appendChild(svgEl);
 
-      // Wijken interactief maken
       var groups = svgEl.querySelectorAll('#dorpen_en_wijken_kleuren > g');
-      groups.forEach(function(g) {
-        g.classList.add('wijk-path');
-      });
+      groups.forEach(function(g) { g.classList.add('wijk-path'); });
 
-      bindEvents(groups, tooltip);
+      bindEvents(groups, showTooltip, hideTooltip);
     };
     xhr.send();
   }
 
-  function bindEvents(groups, tooltip) {
+  function bindEvents(groups, showTooltip, hideTooltip) {
 
     function clearActive() {
       groups.forEach(function(g) { g.classList.remove('actief'); });
@@ -93,21 +100,14 @@
       });
     }
 
+    // Kaart hover & klik
     groups.forEach(function(g) {
       var slug = g.id;
       var naam = NAMES[slug] || slug;
 
-      g.addEventListener('mouseenter', function() {
-        tooltip.textContent = naam;
-        tooltip.style.opacity = '1';
-      });
-      g.addEventListener('mousemove', function(e) {
-        tooltip.style.left = (e.clientX + 14) + 'px';
-        tooltip.style.top  = (e.clientY - 36) + 'px';
-      });
-      g.addEventListener('mouseleave', function() {
-        tooltip.style.opacity = '0';
-      });
+      g.addEventListener('mouseenter', function(e) { showTooltip(naam, e); });
+      g.addEventListener('mousemove',  function(e) { showTooltip(naam, e); });
+      g.addEventListener('mouseleave', function()  { hideTooltip(); });
       g.addEventListener('click', function(e) {
         e.preventDefault();
         clearActive();
@@ -121,18 +121,30 @@
       });
     });
 
-    // Lijst hover -> kaart
+    // Lijst hover → kaart + tooltip
     document.addEventListener('mouseenter', function(e) {
       var item = e.target.closest('[data-slug]');
       if (!item) return;
+      var slug = item.dataset.slug;
+      var naam = NAMES[slug] || slug;
       groups.forEach(function(g) {
-        g.classList.toggle('actief', g.id === item.dataset.slug);
+        g.classList.toggle('actief', g.id === slug);
       });
+      showTooltip(naam, e);
+    }, true);
+
+    document.addEventListener('mousemove', function(e) {
+      var item = e.target.closest('[data-slug]');
+      if (!item) return;
+      var slug = item.dataset.slug;
+      var naam = NAMES[slug] || slug;
+      showTooltip(naam, e);
     }, true);
 
     document.addEventListener('mouseleave', function(e) {
       var item = e.target.closest('[data-slug]');
       if (!item) return;
+      hideTooltip();
       var a = document.querySelector('[data-slug].wijk-actief');
       groups.forEach(function(g) {
         g.classList.toggle('actief', a && g.id === a.dataset.slug);
