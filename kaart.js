@@ -5,7 +5,7 @@
 (function() {
 
   var SVG_URL = 'https://cdn.prod.website-files.com/60edd8e8a792c4b08f5abdb2/6a0b00dbd4d353835654b3ce_kaart-gemeente-apeldoorn.svg';
-  var VIEWBOX = '2901 1596 7696 7800';
+  var VIEWBOX = '1336 1074 9484 9281';
 
   var NAMES = {
     'beekbergen':                    'Beekbergen, Lieren & Oosterhuizen',
